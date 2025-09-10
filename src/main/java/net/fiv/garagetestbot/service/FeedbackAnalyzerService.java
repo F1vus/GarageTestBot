@@ -1,19 +1,22 @@
 package net.fiv.garagetestbot.service;
 
-import lombok.RequiredArgsConstructor;
 import net.fiv.garagetestbot.dto.FeedbackJson;
 import net.fiv.garagetestbot.dto.OpenAiRequest;
 import net.fiv.garagetestbot.dto.OpenAiResponse;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class FeedbackAnalyzerService {
 
     private final RestClient openAiRestClient;
+
+    public FeedbackAnalyzerService(@Qualifier("openAiClient") RestClient openAiRestClient) {
+        this.openAiRestClient = openAiRestClient;
+    }
 
     public FeedbackJson analyzeFeedback(String feedback) {
         OpenAiRequest request = new OpenAiRequest(

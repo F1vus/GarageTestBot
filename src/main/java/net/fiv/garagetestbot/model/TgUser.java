@@ -7,6 +7,8 @@ import lombok.Setter;
 import net.fiv.garagetestbot.model.enums.UserRole;
 import net.fiv.garagetestbot.model.enums.converter.RoleConverter;
 
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -27,10 +29,13 @@ public class TgUser {
     @Convert(converter = RoleConverter.class)
     private UserRole role;
 
-    @Column(name = "branch")
-    private String branch;
+    @ManyToOne
+    @JoinColumn(name = "branch_id", referencedColumnName = "id")
+    private Branch branch;
 
     @Column(name="is_active")
     private Boolean active;
 
+    @OneToMany(mappedBy = "user")
+    private List<Feedback> feedbackList;
 }

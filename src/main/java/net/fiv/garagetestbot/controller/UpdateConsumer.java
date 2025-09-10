@@ -2,11 +2,9 @@ package net.fiv.garagetestbot.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.fiv.garagetestbot.model.Branch;
 import net.fiv.garagetestbot.model.enums.UserRole;
-import net.fiv.garagetestbot.service.FeedbackAnalyzerService;
-import net.fiv.garagetestbot.service.FeedbackService;
-import net.fiv.garagetestbot.service.GoogleDocsService;
-import net.fiv.garagetestbot.service.UserStateService;
+import net.fiv.garagetestbot.service.*;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -31,6 +29,7 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
     private final FeedbackAnalyzerService feedbackAnalyzerService;
     private final GoogleDocsService googleDocsService;
     private final FeedbackService feedbackService;
+    private final BranchService branchService;
 
     @Override
     public void consume(Update update) {
@@ -58,11 +57,6 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                     askRole(chatId);
                 } else if (state.getBranch() == null) {
                     askBranch(chatId);
-                    state.setBranch(text);
-                    state.setActive(true);
-                    log.info("New registration. userTelegramId: {}, role: {}, branch: {}", chatId, state.getRole(), state.getBranch());
-                    sendMessage(chatId, "Дякую! Ви зареєстровані як " + state.getRole().getDisplayName() +
-                            " у філії " + state.getBranch() + ". Тепер ви можете надсилати відгуки");
                 }
             } else {
                 if (!text.isBlank()) {
@@ -70,8 +64,9 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                     sendMessage(chatId, "Відгук отримано.");
                     try {
                         var analysis = feedbackAnalyzerService.analyzeFeedback(text);
-                        analysis.setUserTelegramId(userTelegramId);
+
                         analysis.setText(text);
+                        analysis.setUser(state);
 
                         googleDocsService.appendFeedback(text, analysis);
                         feedbackService.save(analysis);
@@ -96,10 +91,21 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                 state.setRole(role);
                 sendMessage(chatId, "Ви обрали роль: " + role.getDisplayName());
                 askBranch(chatId);
+            } else if (data.startsWith("BRANCH_")) {
+                Long branchId = Long.parseLong(data.replace("BRANCH_", ""));
+                Branch branch = branchService.findBranchById(branchId);
+
+                state.setBranch(branch);
+                state.setActive(true);
+
+                userStateService.save(state);
+                log.info("New registration. userTelegramId: {}, role: {}, branch: {}", chatId, state.getRole(), state.getBranch());
+                sendMessage(chatId, "Ви обрали філію: " + branch.getName() +
+                        ". Тепер ви зареєстровані як " + state.getRole().getDisplayName());
             }
+
         }
 
-        userStateService.save(state);
     }
 
     private void askRole( Long chatId) {
@@ -123,7 +129,24 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
 
 
     private void askBranch(Long chatId) {
-        sendMessage(chatId, "Введіть назву вашої філії:");
+        List<InlineKeyboardRow> keyboard = new ArrayList<>();
+
+        List<Branch> branches = branchService.getAllBranches();
+
+        for (Branch branch : branches) {
+            InlineKeyboardButton button = InlineKeyboardButton.builder()
+                    .text(branch.getName())
+                    .callbackData("BRANCH_" + branch.getId())
+                    .build();
+
+            keyboard.add(new InlineKeyboardRow(button));
+        }
+
+        InlineKeyboardMarkup markup = InlineKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .build();
+
+        sendMessageWithKeyboard(chatId, markup);
     }
 
     private void sendMessage(Long chatId, String text) {

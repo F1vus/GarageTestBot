@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>Адмінка - Відгуки</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<h1>Відгуки</h1>
+
+<form th:action="@{/admin/feedbacks}" method="get">
+    <label>Філія:</label>
+    <select name="branch">
+        <option value="">Всі</option>
+        <option th:each="b : ${branches}" th:value="${b.getName()}" th:text="${b.getName()}"></option>
+    </select>
+
+    <label>Роль:</label>
+    <select name="role">
+        <option value="">Всі</option>
+        <option th:each="r : ${roles}" th:value="${r}" th:text="${r}"></option>
+    </select>
+
+    <label>Критичність:</label>
+    <select name="criticality">
+        <option value="">Всі</option>
+        <option th:each="i : ${#numbers.sequence(1,5)}" th:value="${i}" th:text="${i}"></option>
+    </select>
+
+    <button type="submit">Фільтрувати</button>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Текст</th>
+        <th>Філія</th>
+        <th>Роль</th>
+        <th>Критичність</th>
+        <th>Сентимент</th>
+        <th>Пропозиція вирішення</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="f : ${feedbacks}">
+        <td th:text="${f.id}"></td>
+        <td th:text="${f.text}"></td>
+        <td th:text="${f.user.branch.getName()}"></td>
+        <td th:text="${f.user.role}"></td>
+        <td th:text="${f.criticality}"></td>
+        <td th:text="${f.sentiment}"></td>
+        <td th:text="${f.getSolution()}"></td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

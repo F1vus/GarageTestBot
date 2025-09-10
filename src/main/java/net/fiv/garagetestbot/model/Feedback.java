@@ -17,9 +17,6 @@ public class Feedback {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="user_telegram_id")
-    private Long userTelegramId;
-
     @Column(name ="text")
     private String text;
 
@@ -27,11 +24,15 @@ public class Feedback {
     private String sentiment;
 
     @Column(name = "criticality")
-    private String criticality;
+    private Integer criticality;
 
     @Column(name = "solution")
     private String solution;
 
     @Column(name="feedback_date")
     private LocalDateTime feedbackDate;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private TgUser user;
 }

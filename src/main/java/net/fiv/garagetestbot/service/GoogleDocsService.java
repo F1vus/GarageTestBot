@@ -57,7 +57,7 @@ public class GoogleDocsService {
                 feedback_analysis.getSentiment(),
                 feedback_analysis.getCriticality(),
                 feedback_analysis.getSolution(),
-                feedback_analysis.getUserTelegramId()
+                feedback_analysis.getUser().getTelegramUserId()
         );
 
         requests.add(new Request().setInsertText(new InsertTextRequest()
