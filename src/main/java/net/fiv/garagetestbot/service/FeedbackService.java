@@ -3,6 +3,7 @@ package net.fiv.garagetestbot.service;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import net.fiv.garagetestbot.dto.FeedbackJson;
 import net.fiv.garagetestbot.model.Feedback;
 import net.fiv.garagetestbot.model.TgUser;
@@ -21,6 +22,7 @@ import java.util.List;
 
 
 @Service
+@Slf4j
 public class FeedbackService {
     @Value("${trello.key}")
     private String apiKey;
@@ -77,6 +79,7 @@ public class FeedbackService {
                     "Критичний відгук від філії: " + feedbackEntity.getUser().getBranch().getName(),
                     feedbackEntity.getText()
             );
+            log.warn("New critical feedback! branch: {}, text: {}", feedbackEntity.getUser().getBranch().getName(), feedbackEntity.getText());
         }
 
         feedbackRepository.save(feedbackEntity);
@@ -96,6 +99,6 @@ public class FeedbackService {
                 .uri(builder.build().toUri())
                 .retrieve()
                 .toEntity(String.class);
-        System.out.println(response.getBody());
+        log.info("Trello card created with status: {}", response.getStatusCode());
     }
 }

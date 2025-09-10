@@ -3,6 +3,7 @@ package net.fiv.garagetestbot.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.fiv.garagetestbot.model.Branch;
+import net.fiv.garagetestbot.model.TgUser;
 import net.fiv.garagetestbot.model.enums.UserRole;
 import net.fiv.garagetestbot.service.*;
 import org.springframework.stereotype.Component;
@@ -60,30 +61,14 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                 }
             } else {
                 if (!text.isBlank()) {
-                    log.info("Feedback from chatId: {}, message: {}", chatId, text);
-                    sendMessage(chatId, "Відгук отримано.");
-                    try {
-                        var analysis = feedbackAnalyzerService.analyzeFeedback(text);
-
-                        analysis.setText(text);
-                        analysis.setUser(state);
-
-                        googleDocsService.appendFeedback(text, analysis);
-                        feedbackService.save(analysis);
-
-                        log.info("Feedback from {}", analysis);
-                        sendMessage(chatId, "Відгук обролено!");
-                    } catch (IOException e) {
-                        sendMessage(chatId, "При обробці відгуку сталася помилка!");
-                        log.error(e.getMessage());
-                        throw new RuntimeException(e);
-                    }
+                    feedbackProcessing(chatId, text, state);
                 } else {
                     sendMessage(chatId, "Повідомлення не відповідає формату");
                 }
 
             }
         } else if (update.hasCallbackQuery()) {
+            // User registration process
             String data = update.getCallbackQuery().getData();
             if (data.startsWith("ROLE_")) {
                 String roleName = data.replace("ROLE_", "");
@@ -98,7 +83,6 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                 state.setBranch(branch);
                 state.setActive(true);
 
-
                 log.info("New registration. userTelegramId: {}, role: {}, branch: {}", chatId, state.getRole(), state.getBranch());
                 sendMessage(chatId, "Ви обрали філію: " + branch.getName() +
                         ". Тепер ви зареєстровані як " + state.getRole().getDisplayName());
@@ -107,6 +91,27 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
             userStateService.save(state);
         }
 
+    }
+
+    private void feedbackProcessing(Long chatId, String text, TgUser state) {
+        log.info("Feedback from chatId: {}, message: {}", chatId, text);
+        sendMessage(chatId, "Відгук отримано.");
+        try {
+            var analysis = feedbackAnalyzerService.analyzeFeedback(text);
+
+            analysis.setText(text);
+            analysis.setUser(state);
+
+            googleDocsService.appendFeedback(text, analysis);
+            feedbackService.save(analysis);
+
+            log.info("Feedback from {}", analysis);
+            sendMessage(chatId, "Відгук обролено!");
+        } catch (IOException e) {
+            sendMessage(chatId, "При обробці відгуку сталася помилка!");
+            log.error(e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     private void askRole( Long chatId) {
