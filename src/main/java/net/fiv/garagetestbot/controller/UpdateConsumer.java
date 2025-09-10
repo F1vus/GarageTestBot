@@ -98,12 +98,13 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                 state.setBranch(branch);
                 state.setActive(true);
 
-                userStateService.save(state);
+
                 log.info("New registration. userTelegramId: {}, role: {}, branch: {}", chatId, state.getRole(), state.getBranch());
                 sendMessage(chatId, "Ви обрали філію: " + branch.getName() +
                         ". Тепер ви зареєстровані як " + state.getRole().getDisplayName());
-            }
 
+            }
+            userStateService.save(state);
         }
 
     }
@@ -124,7 +125,7 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                 .keyboard(keyboard)
                 .build();
 
-        sendMessageWithKeyboard(chatId, markup);
+        sendMessageWithKeyboard(chatId, "Оберіть вашу посаду:",markup);
     }
 
 
@@ -146,7 +147,7 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                 .keyboard(keyboard)
                 .build();
 
-        sendMessageWithKeyboard(chatId, markup);
+        sendMessageWithKeyboard(chatId, "Оберіть вашу філію:",markup);
     }
 
     private void sendMessage(Long chatId, String text) {
@@ -160,11 +161,11 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
         }
     }
 
-    private void sendMessageWithKeyboard(Long chatId, InlineKeyboardMarkup markup) {
+    private void sendMessageWithKeyboard(Long chatId, String text, InlineKeyboardMarkup markup) {
         try {
             telegramClient.execute(SendMessage.builder()
                     .chatId(chatId.toString())
-                    .text("Оберіть вашу посаду:")
+                    .text(text)
                     .replyMarkup(markup)
                     .build());
         } catch (Exception e) {
